@@ -1,0 +1,57 @@
+dependencies:
+  chmorgan/esp-audio-player:
+    dependencies: []
+    source:
+      path: /home/amitn/Projects/ESPCast/components/chmorgan__esp-audio-player
+      type: local
+    version: 1.0.7
+  chmorgan/esp-libhelix-mp3:
+    dependencies: []
+    source:
+      path: /home/amitn/Projects/ESPCast/components/chmorgan__esp-libhelix-mp3
+      type: local
+    version: 1.0.3
+  espressif/esp-dsp:
+    dependencies: []
+    source:
+      path: /home/amitn/Projects/ESPCast/components/espressif__esp-dsp
+      type: local
+    version: 1.4.12
+  espressif/esp-sr:
+    dependencies: []
+    source:
+      path: /home/amitn/Projects/ESPCast/components/espressif__esp-sr
+      type: local
+    version: 1.9.4
+  espressif/mdns:
+    component_hash: 
+      3ec0af5f6bce310512e90f482388d21cc7c0e99668172d2f895356165fc6f7c5
+    dependencies:
+    - name: idf
+      require: private
+      version: '>=5.0'
+    source:
+      registry_url: https://components.espressif.com/
+      type: service
+    version: 1.8.2
+  idf:
+    source:
+      type: idf
+    version: 5.5.0
+  lvgl/lvgl:
+    dependencies: []
+    source:
+      path: /home/amitn/Projects/ESPCast/components/lvgl__lvgl
+      type: local
+    version: 8.3.11
+direct_dependencies:
+- chmorgan/esp-audio-player
+- chmorgan/esp-libhelix-mp3
+- espressif/esp-dsp
+- espressif/esp-sr
+- espressif/mdns
+- idf
+- lvgl/lvgl
+manifest_hash: ad515512c4a652e9ba96d8c8d81c40cfe59a901fa89025751fe7a9273ffa6998
+target: esp32s3
+version: 2.0.0

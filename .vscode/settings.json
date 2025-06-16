@@ -1,0 +1,14 @@
+{
+  "C_Cpp.intelliSenseEngine": "default",
+  "idf.espIdfPath": "/home/amitn/esp/v5.5/esp-idf",
+  "idf.toolsPath": "/home/amitn/.espressif",
+  "idf.pythonInstallPath": "/usr/bin/python3",
+  "idf.flashType": "UART",
+  "idf.openOcdConfigs": [
+    "board/esp32s3-builtin.cfg"
+  ],
+  "idf.customExtraVars": {
+    "IDF_TARGET": "esp32s3"
+  },
+  "idf.port": "/dev/ttyACM0"
+}

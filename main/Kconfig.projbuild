@@ -1,0 +1,40 @@
+menu "Example Configuration"
+    config LV_MEM_SIZE_KILOBYTES
+        int "Size of the memory used by `lv_mem_alloc` in kilobytes (>= 2kB)"
+        default 48
+    config BT_ENABLED
+        bool "Select this option to enable Bluetooth"
+        default y
+
+    config BT_BLE_50_FEATURES_SUPPORTED
+        bool "Enabling this option activates BLE 5.0 features"
+        default y
+
+    config BT_BLE_42_FEATURES_SUPPORTED
+        bool "This enables BLE 4.2 features."
+        default y
+
+    menu "Default WiFi Configuration"
+        config DEFAULT_WIFI_ENABLED
+            bool "Enable default WiFi credentials"
+            default n
+            help
+                Enable this option to configure default WiFi credentials that will be
+                tried first before falling back to saved credentials or manual configuration.
+
+        config DEFAULT_WIFI_SSID
+            string "Default WiFi SSID"
+            depends on DEFAULT_WIFI_ENABLED
+            default ""
+            help
+                The SSID of the default WiFi network to connect to.
+
+        config DEFAULT_WIFI_PASSWORD
+            string "Default WiFi Password"
+            depends on DEFAULT_WIFI_ENABLED
+            default ""
+            help
+                The password for the default WiFi network.
+    endmenu
+
+endmenu
