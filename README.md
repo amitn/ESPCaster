@@ -7,6 +7,18 @@ ESPCast is an ESP32-based smart display device that combines Chromecast discover
 
 **Development:** This project was developed with AI assistance using Augment Agent, demonstrating collaborative human-AI software development for embedded systems.
 
+## Screenshots
+
+<div align="center">
+  <img src="pictures/ESPCaster_Devices.png" alt="ESPCast Chromecast Device Discovery" width="400">
+  <p><em>Chromecast device discovery and selection interface</em></p>
+</div>
+
+<div align="center">
+  <img src="pictures/ESPCaster_Volume.png" alt="ESPCast Volume Control" width="400">
+  <p><em>Volume control interface for connected Chromecast devices</em></p>
+</div>
+
 ## Overview
 
 ESPCast transforms an ESP32 microcontroller into a sophisticated smart display that can:
