@@ -12,6 +12,13 @@
 
 #include "esp_cast.h"
 
+// Uncomment to enable Spotify integration testing
+// #define ENABLE_SPOTIFY_TESTS
+
+#ifdef ENABLE_SPOTIFY_TESTS
+extern void start_spotify_integration_tests(void);
+#endif
+
 void Driver_Loop(void *parameter)
 {
     // Wireless_Init();
@@ -61,6 +68,25 @@ void app_main(void)
 
     // Test default WiFi functionality (uncomment to test)
     // esp_cast_test_default_wifi();
+
+    // Initialize Spotify integration (uncomment and configure to enable)
+    /*
+    bool spotify_success = esp_cast_spotify_init(
+        "your_spotify_client_id",
+        "your_spotify_client_secret",  // Can be NULL for PKCE flow
+        "http://localhost:8888/callback"
+    );
+    if (spotify_success) {
+        ESP_LOGI("MAIN", "Spotify integration initialized successfully");
+    } else {
+        ESP_LOGE("MAIN", "Failed to initialize Spotify integration");
+    }
+    */
+
+#ifdef ENABLE_SPOTIFY_TESTS
+    // Start Spotify integration tests
+    start_spotify_integration_tests();
+#endif
 
     // lv_demo_widgets();
     // lv_demo_keypad_encoder();

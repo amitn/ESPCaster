@@ -23,6 +23,8 @@ idf_component_register(
                               "./Cast/chromecast_discovery_wrapper.cpp"
                               "./Cast/chromecast_controller_wrapper.cpp"
                               "./Cast/chromecast_gui_manager.c"
+                              "./Cast/spotify_controller_wrapper.cpp"
+                              "./Cast/spotify_gui_manager.c"
 
                          INCLUDE_DIRS 
                               "./Audio_Driver" 
@@ -46,6 +48,7 @@ idf_component_register(
                        REQUIRES
                               "chromecast_discovery"
                               "chromecast_controller"
+                              "spotify_controller"
                               "esp_adc"
                               "esp_lcd"
                               "fatfs"

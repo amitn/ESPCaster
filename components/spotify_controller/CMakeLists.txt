@@ -1,0 +1,21 @@
+idf_component_register(
+    SRCS 
+        "spotify_controller.cpp"
+        "spotify_auth.cpp"
+        "spotify_api_client.cpp"
+    INCLUDE_DIRS 
+        "."
+    REQUIRES 
+        esp_http_client
+        esp_http_server
+        json
+        mbedtls
+        nvs_flash
+        esp_wifi
+        esp_netif
+        esp_event
+        log
+        freertos
+    PRIV_REQUIRES
+        esp_timer
+)
