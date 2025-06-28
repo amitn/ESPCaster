@@ -1,4 +1,5 @@
 #include "spotify_gui_manager.h"
+#include "spotify_config_manager.h"
 #include "esp_cast.h"
 #include "esp_log.h"
 #include "esp_err.h"
@@ -8,6 +9,8 @@
 static const char *TAG = "spotify_gui_manager";
 
 // Forward declarations for callback functions
+static void config_save_button_cb(lv_event_t *e);
+static void config_cancel_button_cb(lv_event_t *e);
 static void track_play_button_cb(lv_event_t *e);
 static void track_cast_button_cb(lv_event_t *e);
 static void chromecast_device_button_cb(lv_event_t *e);
@@ -26,11 +29,17 @@ typedef struct {
     spotify_gui_screen_t current_screen_type;
     
     // Screen containers
+    lv_obj_t *config_screen;
     lv_obj_t *auth_screen;
     lv_obj_t *playlists_screen;
     lv_obj_t *tracks_screen;
     lv_obj_t *player_screen;
     lv_obj_t *search_screen;
+
+    // Configuration screen elements
+    lv_obj_t *client_id_textarea;
+    lv_obj_t *client_secret_textarea;
+    lv_obj_t *redirect_uri_textarea;
     
     // Current data
     const spotify_playlist_info_t *current_playlists;
@@ -139,6 +148,111 @@ lv_obj_t *spotify_gui_create_interface(lv_obj_t *parent) {
     spotify_gui_show_auth_screen();
 
     return container;
+}
+
+void spotify_gui_show_config_screen(void) {
+    ESP_LOGI(TAG, "Showing configuration screen");
+
+    // Clear current screen
+    if (g_gui_state.current_screen) {
+        lv_obj_del(g_gui_state.current_screen);
+        g_gui_state.current_screen = NULL;
+    }
+
+    // Create config screen container
+    g_gui_state.config_screen = lv_obj_create(g_gui_state.main_container);
+    lv_obj_set_size(g_gui_state.config_screen, lv_pct(95), lv_pct(90));
+    lv_obj_center(g_gui_state.config_screen);
+
+    g_gui_state.current_screen = g_gui_state.config_screen;
+    g_gui_state.current_screen_type = SPOTIFY_GUI_SCREEN_CONFIG;
+
+    // Create title
+    lv_obj_t *title = lv_label_create(g_gui_state.config_screen);
+    lv_label_set_text(title, "Spotify Configuration");
+    lv_obj_align(title, LV_ALIGN_TOP_MID, 0, 10);
+
+    // Create scrollable container for form
+    lv_obj_t *scroll_container = lv_obj_create(g_gui_state.config_screen);
+    lv_obj_set_size(scroll_container, lv_pct(90), lv_pct(75));
+    lv_obj_align(scroll_container, LV_ALIGN_CENTER, 0, 0);
+    lv_obj_set_flex_flow(scroll_container, LV_FLEX_FLOW_COLUMN);
+    lv_obj_set_flex_align(scroll_container, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
+
+    // Client ID field
+    lv_obj_t *client_id_label = lv_label_create(scroll_container);
+    lv_label_set_text(client_id_label, "Client ID (required):");
+    lv_obj_set_width(client_id_label, lv_pct(100));
+
+    g_gui_state.client_id_textarea = lv_textarea_create(scroll_container);
+    lv_obj_set_size(g_gui_state.client_id_textarea, lv_pct(100), 40);
+    lv_textarea_set_placeholder_text(g_gui_state.client_id_textarea, "Enter your Spotify Client ID");
+    lv_textarea_set_one_line(g_gui_state.client_id_textarea, true);
+
+    // Client Secret field
+    lv_obj_t *client_secret_label = lv_label_create(scroll_container);
+    lv_label_set_text(client_secret_label, "Client Secret (optional for PKCE):");
+    lv_obj_set_width(client_secret_label, lv_pct(100));
+
+    g_gui_state.client_secret_textarea = lv_textarea_create(scroll_container);
+    lv_obj_set_size(g_gui_state.client_secret_textarea, lv_pct(100), 40);
+    lv_textarea_set_placeholder_text(g_gui_state.client_secret_textarea, "Enter your Spotify Client Secret");
+    lv_textarea_set_one_line(g_gui_state.client_secret_textarea, true);
+    lv_textarea_set_password_mode(g_gui_state.client_secret_textarea, true);
+
+    // Redirect URI field
+    lv_obj_t *redirect_uri_label = lv_label_create(scroll_container);
+    lv_label_set_text(redirect_uri_label, "Redirect URI:");
+    lv_obj_set_width(redirect_uri_label, lv_pct(100));
+
+    g_gui_state.redirect_uri_textarea = lv_textarea_create(scroll_container);
+    lv_obj_set_size(g_gui_state.redirect_uri_textarea, lv_pct(100), 40);
+    lv_textarea_set_text(g_gui_state.redirect_uri_textarea, spotify_config_get_default_redirect_uri());
+    lv_textarea_set_one_line(g_gui_state.redirect_uri_textarea, true);
+
+    // Instructions
+    lv_obj_t *instructions = lv_label_create(scroll_container);
+    lv_label_set_text(instructions, "Get your credentials from:\nhttps://developer.spotify.com/dashboard");
+    lv_label_set_long_mode(instructions, LV_LABEL_LONG_WRAP);
+    lv_obj_set_width(instructions, lv_pct(100));
+    lv_obj_set_style_text_align(instructions, LV_TEXT_ALIGN_CENTER, 0);
+
+    // Button container
+    lv_obj_t *btn_container = lv_obj_create(g_gui_state.config_screen);
+    lv_obj_set_size(btn_container, lv_pct(90), 60);
+    lv_obj_align(btn_container, LV_ALIGN_BOTTOM_MID, 0, -10);
+    lv_obj_set_flex_flow(btn_container, LV_FLEX_FLOW_ROW);
+    lv_obj_set_flex_align(btn_container, LV_FLEX_ALIGN_SPACE_EVENLY, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
+
+    // Save button
+    lv_obj_t *save_btn = lv_btn_create(btn_container);
+    lv_obj_set_size(save_btn, 100, 40);
+    lv_obj_add_event_cb(save_btn, config_save_button_cb, LV_EVENT_CLICKED, NULL);
+
+    lv_obj_t *save_label = lv_label_create(save_btn);
+    lv_label_set_text(save_label, "Save");
+    lv_obj_center(save_label);
+
+    // Cancel button
+    lv_obj_t *cancel_btn = lv_btn_create(btn_container);
+    lv_obj_set_size(cancel_btn, 100, 40);
+    lv_obj_add_event_cb(cancel_btn, config_cancel_button_cb, LV_EVENT_CLICKED, NULL);
+
+    lv_obj_t *cancel_label = lv_label_create(cancel_btn);
+    lv_label_set_text(cancel_label, "Cancel");
+    lv_obj_center(cancel_label);
+
+    // Try to load existing configuration
+    spotify_config_t existing_config;
+    if (spotify_config_load(&existing_config) == ESP_OK) {
+        lv_textarea_set_text(g_gui_state.client_id_textarea, existing_config.client_id);
+        if (strlen(existing_config.client_secret) > 0) {
+            lv_textarea_set_text(g_gui_state.client_secret_textarea, existing_config.client_secret);
+        }
+        if (strlen(existing_config.redirect_uri) > 0) {
+            lv_textarea_set_text(g_gui_state.redirect_uri_textarea, existing_config.redirect_uri);
+        }
+    }
 }
 
 void spotify_gui_show_auth_screen(void) {
@@ -711,6 +825,98 @@ void spotify_gui_set_controller_handle(spotify_controller_handle_t controller) {
 
 spotify_controller_handle_t spotify_gui_get_controller_handle(void) {
     return g_gui_state.controller_handle;
+}
+
+// Configuration screen callback implementations
+static void config_save_button_cb(lv_event_t *e) {
+    ESP_LOGI(TAG, "Configuration save button clicked");
+
+    // Get text from input fields
+    const char *client_id = lv_textarea_get_text(g_gui_state.client_id_textarea);
+    const char *client_secret = lv_textarea_get_text(g_gui_state.client_secret_textarea);
+    const char *redirect_uri = lv_textarea_get_text(g_gui_state.redirect_uri_textarea);
+
+    // Validate required fields
+    if (!client_id || strlen(client_id) == 0) {
+        spotify_gui_show_error("Client ID is required");
+        return;
+    }
+
+    // Create configuration structure
+    spotify_config_t config = {0};
+    strncpy(config.client_id, client_id, SPOTIFY_CLIENT_ID_MAX_LEN - 1);
+
+    if (client_secret && strlen(client_secret) > 0) {
+        strncpy(config.client_secret, client_secret, SPOTIFY_CLIENT_SECRET_MAX_LEN - 1);
+    }
+
+    if (redirect_uri && strlen(redirect_uri) > 0) {
+        strncpy(config.redirect_uri, redirect_uri, SPOTIFY_REDIRECT_URI_MAX_LEN - 1);
+    } else {
+        strncpy(config.redirect_uri, spotify_config_get_default_redirect_uri(), SPOTIFY_REDIRECT_URI_MAX_LEN - 1);
+    }
+
+    // Validate configuration
+    if (!spotify_config_validate(&config)) {
+        spotify_gui_show_error("Invalid configuration. Please check your inputs.");
+        return;
+    }
+
+    // Save configuration
+    esp_err_t ret = spotify_config_save(&config);
+    if (ret != ESP_OK) {
+        spotify_gui_show_error("Failed to save configuration");
+        return;
+    }
+
+    ESP_LOGI(TAG, "Spotify configuration saved successfully");
+
+    // Show success message briefly
+    if (g_gui_state.status_bar) {
+        lv_label_set_text(g_gui_state.status_bar, "Configuration saved successfully!");
+    }
+
+    // Initialize Spotify with new configuration
+    bool spotify_init_success = esp_cast_spotify_init(config.client_id,
+                                                     strlen(config.client_secret) > 0 ? config.client_secret : NULL,
+                                                     config.redirect_uri);
+
+    if (spotify_init_success) {
+        // Update controller handle in GUI
+        g_gui_state.controller_handle = esp_cast_get_spotify_controller();
+
+        // Show authentication screen
+        spotify_gui_show_auth_screen();
+
+        // Update status
+        if (g_gui_state.status_bar) {
+            lv_label_set_text(g_gui_state.status_bar, "Spotify: Ready for authentication");
+        }
+    } else {
+        spotify_gui_show_error("Failed to initialize Spotify with provided credentials");
+    }
+}
+
+static void config_cancel_button_cb(lv_event_t *e) {
+    ESP_LOGI(TAG, "Configuration cancel button clicked");
+
+    // Check if Spotify is already configured
+    if (spotify_config_is_configured()) {
+        // Show auth screen if already configured
+        spotify_gui_show_auth_screen();
+    } else {
+        // Show placeholder message if not configured
+        if (g_gui_state.current_screen) {
+            lv_obj_del(g_gui_state.current_screen);
+            g_gui_state.current_screen = NULL;
+        }
+
+        lv_obj_t *placeholder = lv_label_create(g_gui_state.main_container);
+        lv_label_set_text(placeholder, "Spotify not configured.\nPlease configure with client credentials.");
+        lv_obj_center(placeholder);
+        g_gui_state.current_screen = placeholder;
+        g_gui_state.current_screen_type = SPOTIFY_GUI_SCREEN_CONFIG;
+    }
 }
 
 // Placeholder implementations for functions not yet implemented

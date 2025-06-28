@@ -30,6 +30,7 @@ typedef struct {
  * @brief Spotify GUI screen types
  */
 typedef enum {
+    SPOTIFY_GUI_SCREEN_CONFIG,      // Configuration screen (for entering credentials)
     SPOTIFY_GUI_SCREEN_AUTH,        // Authentication screen
     SPOTIFY_GUI_SCREEN_PLAYLISTS,   // Playlists browser
     SPOTIFY_GUI_SCREEN_TRACKS,      // Track list
@@ -63,8 +64,15 @@ esp_err_t spotify_gui_manager_deinit(void);
 lv_obj_t *spotify_gui_create_interface(lv_obj_t *parent);
 
 /**
+ * @brief Show configuration screen
+ *
+ * Displays input fields for Spotify credentials
+ */
+void spotify_gui_show_config_screen(void);
+
+/**
  * @brief Show authentication screen
- * 
+ *
  * Displays QR code and instructions for user authentication
  */
 void spotify_gui_show_auth_screen(void);

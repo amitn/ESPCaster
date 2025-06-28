@@ -7,6 +7,7 @@
 #include "chromecast_gui_manager.h"
 #include "spotify_controller_wrapper.h"
 #include "spotify_gui_manager.h"
+#include "spotify_config_manager.h"
 #include <string.h>
 
 #include "freertos/FreeRTOS.h"
@@ -71,8 +72,52 @@ void esp_cast_wifi_init_sta(void) {
 
 static void chromecast_discovery_callback_gui(const chromecast_device_info_t* devices, size_t device_count);
 
+// Auto-initialize Spotify from stored configuration
+static void esp_cast_auto_init_spotify(void) {
+    ESP_LOGI(TAG, "Checking for stored Spotify configuration");
+
+    // Initialize config manager
+    esp_err_t ret = spotify_config_manager_init();
+    if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to initialize Spotify config manager: %s", esp_err_to_name(ret));
+        return;
+    }
+
+    // Check if configuration exists
+    if (!spotify_config_is_configured()) {
+        ESP_LOGI(TAG, "No Spotify configuration found");
+        return;
+    }
+
+    // Load configuration
+    spotify_config_t config;
+    ret = spotify_config_load(&config);
+    if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to load Spotify configuration: %s", esp_err_to_name(ret));
+        return;
+    }
+
+    ESP_LOGI(TAG, "Found stored Spotify configuration, initializing...");
+
+    // Initialize Spotify with stored credentials
+    bool success = esp_cast_spotify_init(
+        config.client_id,
+        strlen(config.client_secret) > 0 ? config.client_secret : NULL,
+        config.redirect_uri
+    );
+
+    if (success) {
+        ESP_LOGI(TAG, "Spotify auto-initialized successfully from stored configuration");
+    } else {
+        ESP_LOGE(TAG, "Failed to auto-initialize Spotify from stored configuration");
+    }
+}
+
 void esp_cast_gui_init(void) {
     ESP_LOGI(TAG, "Initializing ESP Cast GUI");
+
+    // Auto-initialize Spotify from stored configuration
+    esp_cast_auto_init_spotify();
 
     // Create main tabview
     main_tabview = lv_tabview_create(lv_scr_act(), LV_DIR_TOP, 45);
@@ -107,29 +152,40 @@ void esp_cast_gui_init(void) {
     // Create Spotify tab
     lv_obj_t *spotify_tab = lv_tabview_add_tab(main_tabview, "Spotify");
 
-    // Initialize Spotify GUI manager (if Spotify controller is available)
-    if (spotify_handle) {
-        spotify_gui_config_t spotify_config = {
-            .parent = spotify_tab,
-            .controller = spotify_handle,
-            .show_status_bar = true,
-            .show_auth_button = true,
-            .show_search_bar = true
-        };
+    // Always initialize Spotify GUI manager
+    spotify_gui_config_t spotify_config = {
+        .parent = spotify_tab,
+        .controller = spotify_handle,  // May be NULL if not configured
+        .show_status_bar = true,
+        .show_auth_button = true,
+        .show_search_bar = true
+    };
 
-        esp_err_t ret = spotify_gui_manager_init(&spotify_config);
-        if (ret != ESP_OK) {
-            ESP_LOGE(TAG, "Failed to initialize Spotify GUI Manager: %s", esp_err_to_name(ret));
-        } else {
-            // Create Spotify interface
-            spotify_gui_create_interface(spotify_tab);
-            ESP_LOGI(TAG, "Spotify GUI initialized successfully");
-        }
-    } else {
-        // Create placeholder for Spotify tab
+    esp_err_t spotify_ret = spotify_gui_manager_init(&spotify_config);
+    if (spotify_ret != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to initialize Spotify GUI Manager: %s", esp_err_to_name(spotify_ret));
+        // Create fallback placeholder
         lv_obj_t *placeholder = lv_label_create(spotify_tab);
-        lv_label_set_text(placeholder, "Spotify not configured.\nPlease initialize with client credentials.");
+        lv_label_set_text(placeholder, "Spotify GUI initialization failed.");
         lv_obj_center(placeholder);
+    } else {
+        // Create Spotify interface
+        spotify_gui_create_interface(spotify_tab);
+
+        // Show appropriate screen based on configuration status
+        if (spotify_handle) {
+            // Spotify is initialized, show auth screen
+            spotify_gui_show_auth_screen();
+            ESP_LOGI(TAG, "Spotify GUI initialized with controller");
+        } else if (spotify_config_is_configured()) {
+            // Configuration exists but initialization failed, show config screen for editing
+            spotify_gui_show_config_screen();
+            ESP_LOGI(TAG, "Spotify GUI initialized, showing config screen (init failed)");
+        } else {
+            // No configuration, show config screen
+            spotify_gui_show_config_screen();
+            ESP_LOGI(TAG, "Spotify GUI initialized, showing config screen (not configured)");
+        }
     }
 
     ESP_LOGI(TAG, "ESP Cast GUI initialized with WiFi, Chromecast, and Spotify tabs");

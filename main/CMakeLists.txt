@@ -25,6 +25,7 @@ idf_component_register(
                               "./Cast/chromecast_gui_manager.c"
                               "./Cast/spotify_controller_wrapper.cpp"
                               "./Cast/spotify_gui_manager.c"
+                              "./Cast/spotify_config_manager.c"
 
                          INCLUDE_DIRS 
                               "./Audio_Driver" 
